@@ -1,18 +1,64 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-var question = "placeholder question potato tomato icecream thomas the train tung tung sahur"
-var answer = ""
-var num_attempts =0
 
+var num_attempts =0
+var guess =""
 
 function App() {
- const [submitted_answer, set_submitted_answer] = useState("");
+    var [question, setQuestion] = useState<string | null>(null);
+    var [hints, setHints] = useState<string[]>([]);
+    var [answer, setAnswer] = useState<string | null>(null);
+
+    type Puzzle = {
+    question: string;
+    answer: string;
+    hints: string[];
+};
+
+    var [puzzle, setPuzzle] = useState<Puzzle | null>(null);
+
+    useEffect(() => {
+
+        const fetchData = async () => {
+
+            const res = await fetch(
+                "http://localhost:3000/api/puzzle"
+            );
+            
+            const data = await res.json();
+
+            console.log(data);
+            setPuzzle(data);
+
+            if (puzzle) {
+              setQuestion(puzzle.question);
+              setHints(puzzle.hints);
+              setAnswer(puzzle.answer);
+            };
+
+       
+        }
+         fetchData();
+    }, []);
+   
+
+
+   
+
+  
+
+   
+    
+
  const [currentInput, setCurrentInput] = useState("");
  
  const handleSubmit = () => {
-    set_submitted_answer(currentInput);
+   
+    guess = currentInput;
     num_attempts++;
     setCurrentInput("");
+    
+    sendData()
   };
 
 
@@ -28,13 +74,14 @@ function App() {
     
     <div className="game_ui">
       <br /> <br /> <br /> <br /> 
-      <h1> "{question}"</h1>
+      <h1> {question}</h1>
       <br /><br /> <br /><br /><br /><br />
       
       <div className="submit">
         <textarea 
           value={currentInput}
           onChange={(e) => setCurrentInput(e.target.value)}
+          
           placeholder="Write your guess here"
         />
       
@@ -53,6 +100,24 @@ function App() {
     </>
   )
 }
+
+const sendData = async () => {
+    console.log(guess);
+    const res = await fetch("http://localhost:3000/api/guess", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            guess: guess
+            
+        })
+    });
+
+    const data = await res.json();
+
+    console.log(data);
+};
 
 
 
