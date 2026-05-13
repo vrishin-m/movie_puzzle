@@ -22,8 +22,8 @@ var guess =''
 var puzzle_json = {}
 var result = false
 
-async function send_puzzle() {
-  await generate_puzzle();
+async function send_puzzle(difficulty) {
+  await generate_puzzle(difficulty);
   app.get("/api/puzzle", (req, res) => {
     res.json(puzzle_json);
   
@@ -31,7 +31,7 @@ async function send_puzzle() {
 
 }
 
-send_puzzle();
+send_puzzle("easy");
 
 app.listen(port, () => {
   console.log(`backend is listening on port ${port}`)
@@ -48,6 +48,13 @@ app.post("/api/guess", (req, res) => {
 });
 
 
+app.post("/api/next", (req, res) => {
+    if (req.body.next === "true") {
+      console.log("SANJAAAAAAAY")
+        send_puzzle(req.body.difficulty);
+    }
+    res.json({ success: true });
+  });
 
 
 
@@ -55,10 +62,10 @@ app.post("/api/guess", (req, res) => {
 
 
 
-async function generate_puzzle() {
+async function generate_puzzle(difficulty) {
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: "generate a puzzle that describes a movie in a ridiculous way. make the description as unidentifiable as possible, and keep it short. do not give any obvious indicators of the movie. stick to very famous movies. also give the answer and 3 hints. keep the hints in small sentences. example puzzle: A billionaire beats up the mentally ill while wearing a rubber suit → The Dark Knight. i need your response to contain a list where first element is the puzzle, second element is the answer, third element is a list of hints, and fourth element is the difficulty level (easy, medium or hard). do not include anything else in your response, only the list."
+    contents: `generate a ${difficulty} level puzzle that describes a famous movie in a ridiculous way. make the description as unidentifiable as possible, and keep it short. do not give any obvious indicators of the movie. also give the answer and 3 hints. keep the hints in small sentences. the second hint should be a bit more revealing than the first. example puzzle: A billionaire beats up the mentally ill while wearing a rubber suit → The Dark Knight. i need your response to contain a list where first element is the puzzle, second element is the answer, third element is a list of hints. do not include anything else in your response, only the list.`
   });
 
   

@@ -11,10 +11,7 @@ function App() {
     var [unlockedHints, setUnlockedHints] = useState<string[]>([]);
     var [hints, setHints] = useState<string[]>([]);
     var [answer, setAnswer] = useState<string | null>(null);
-
-
-
-    
+    const [difficulty, setDifficulty] = useState("easy");
 
     useEffect(() => {
 
@@ -25,7 +22,7 @@ function App() {
             );
             
             const data = await res.json();
-          
+            
             console.log(data);
             setQuestion(data.puzzle);
             setHints(data.hints);
@@ -35,37 +32,78 @@ function App() {
          fetchData();
     }, []);
    
+    const [currentInput, setCurrentInput] = useState("");
+    
+
+    const handleSubmit = () => {
+      if (!result) {
+        guess = currentInput;
+        num_attempts++;
+        setCurrentInput("");
+        sendData()
+      };
+    };
+    const get_hint = (num: number) => {
+      if (!result) {
+      if (num < hints.length) {
+        setUnlockedHints([...unlockedHints, hints[num]]);
+        num_hints++;
+        console.log(unlockedHints);
+      }
+    };};
+
+    const show_answer = () => {
+      alert("the answer was " + answer);
+      next_puzzle();
+    }
 
 
-   
-
+      const next_puzzle = async () => {
   
-
-   
-    
-
- const [currentInput, setCurrentInput] = useState("");
- 
- const handleSubmit = () => {
-   
-    guess = currentInput;
-    num_attempts++;
-    setCurrentInput("");
-    
-    sendData()
-  };
-
-const get_hint = (num: number) => {
-  if (num < hints.length) {
-    setUnlockedHints([...unlockedHints, hints[num]]);
-    num_hints++;
-    console.log(unlockedHints);
-  }
-};
+          const res = await fetch("http://localhost:3000/api/next", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    next: "true",
+                    difficulty: difficulty
+                    
+                })
+            });
+          
+          window.location.reload();
+        };
 
 
-    
- 
+      
+    const sendData = async () => {
+        console.log(guess);
+        const res = await fetch("http://localhost:3000/api/guess", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                guess: guess
+                
+            })
+        });
+
+        const data = await res.json();
+        result = data.result;
+        console.log(data);
+        handle_result()
+    };
+
+    const handle_result = () => {
+      if (result) {
+        alert("you won in " + num_attempts + " attempts!");
+        
+      } else {
+        alert("incorrect. check if you entered the exact title of the movie, or try a different movie. you can also get a hint");
+      }
+    };
 
 
   return (
@@ -74,10 +112,29 @@ const get_hint = (num: number) => {
       <h1>Movie Puzzle Game</h1>
       <br />
       <h2> Made by Gandalf</h2>
+      
     </div>
-    
+    <div className = "nextPuzzle">
+
+     <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+    <br /><br />
+      {result=== false?<> 
+      <button onClick={() => next_puzzle()}>Give Up</button>
+      </>:
+      <> 
+      <button onClick={() => next_puzzle()}>Next Puzzle</button>
+      </> }
+
+    </div>
+
+
+
     <div className="game_ui">
-      <br /> <br /> <br /> <br /> 
+      
       <h1> {question}</h1>
       <br /> <br /> 
       <h3> {num_hints>=1?unlockedHints[0]:<br/>}</h3>
@@ -88,7 +145,7 @@ const get_hint = (num: number) => {
       <div className="submit">
         <textarea 
           value={currentInput}
-          onChange={(e) => setCurrentInput(e.target.value)}
+          onChange={(e) => !result? setCurrentInput(e.target.value):{} }
           
           placeholder="Write your guess here"
         />
@@ -109,42 +166,13 @@ const get_hint = (num: number) => {
 
     </div>
 
-    
-
     </>
   )
 }
 
-const sendData = async () => {
-    console.log(guess);
-    const res = await fetch("http://localhost:3000/api/guess", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            guess: guess
-            
-        })
-    });
 
-    const data = await res.json();
-    result = data.result;
-    console.log(data);
-    handle_result()
-};
 
-const handle_result = () => {
-  if (result) {
-    alert("you won in " + num_attempts + " attempts!");
-    next_puzzle();
-  } else {
-    alert("incorrect. check if you entered the exact title of the movie, or try a different movie. you can also get a hint");
-  }
-};
 
-const next_puzzle = () => {
-  //make this function
-};
+
 
 export default App

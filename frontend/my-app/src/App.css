@@ -44,3 +44,28 @@
   font-size: 33px;
   margin-bottom: 16px;
 }
+
+.nextPuzzle  {
+  
+  
+  margin-left: 70%;
+  margin-top: 17%;
+  border-radius: 6px;
+  
+  
+}
+
+.nextPuzzle button{
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 19px;
+  color: grey;
+}
+
+.nextPuzzle select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 19px;
+  color: grey;
+}
+
