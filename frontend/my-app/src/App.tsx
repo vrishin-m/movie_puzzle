@@ -9,13 +9,9 @@ function App() {
     var [hints, setHints] = useState<string[]>([]);
     var [answer, setAnswer] = useState<string | null>(null);
 
-    type Puzzle = {
-    question: string;
-    answer: string;
-    hints: string[];
-};
 
-    var [puzzle, setPuzzle] = useState<Puzzle | null>(null);
+
+    
 
     useEffect(() => {
 
@@ -26,18 +22,13 @@ function App() {
             );
             
             const data = await res.json();
-
+          
             console.log(data);
-            setPuzzle(data);
-
-            if (puzzle) {
-              setQuestion(puzzle.question);
-              setHints(puzzle.hints);
-              setAnswer(puzzle.answer);
-            };
-
-       
-        }
+            setQuestion(data.puzzle);
+            setHints(data.hints);
+            setAnswer(data.answer);
+            console.log(question);
+          }
          fetchData();
     }, []);
    
