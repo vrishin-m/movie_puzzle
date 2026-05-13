@@ -3,9 +3,12 @@ import './App.css'
 
 var num_attempts =0
 var guess =""
+var result = false
+var num_hints=0;
 
 function App() {
     var [question, setQuestion] = useState<string | null>(null);
+    var [unlockedHints, setUnlockedHints] = useState<string[]>([]);
     var [hints, setHints] = useState<string[]>([]);
     var [answer, setAnswer] = useState<string | null>(null);
 
@@ -52,7 +55,17 @@ function App() {
     sendData()
   };
 
+const get_hint = (num: number) => {
+  if (num < hints.length) {
+    setUnlockedHints([...unlockedHints, hints[num]]);
+    num_hints++;
+    console.log(unlockedHints);
+  }
+};
 
+
+    
+ 
 
 
   return (
@@ -66,7 +79,11 @@ function App() {
     <div className="game_ui">
       <br /> <br /> <br /> <br /> 
       <h1> {question}</h1>
-      <br /><br /> <br /><br /><br /><br />
+      <br /> <br /> 
+      <h3> {num_hints>=1?unlockedHints[0]:<br/>}</h3>
+      <h3> {num_hints>=2?unlockedHints[1]:<br/>}</h3>
+      <h3> {num_hints>=3?unlockedHints[2]:<br/>}</h3>
+      <br /><br /> <br />
       
       <div className="submit">
         <textarea 
@@ -82,7 +99,13 @@ function App() {
       <br />
       
       <p>Attempts: {num_attempts}</p>
-      {num_attempts >= 2 && <button className="hint_button">Get Hint</button>}
+      {num_attempts >= 2 && num_hints < 3 ? (
+      <button className="hint_button" onClick = {() => get_hint(num_hints)}>Get Hint</button>
+      ) : num_hints >= 3 ? (
+        <p>You have exhausted the hints</p>
+      ): (
+        <p>Hint is unlocked after 2 attempts</p>
+      )}
 
     </div>
 
@@ -106,10 +129,22 @@ const sendData = async () => {
     });
 
     const data = await res.json();
-
+    result = data.result;
     console.log(data);
+    handle_result()
 };
 
+const handle_result = () => {
+  if (result) {
+    alert("you won in " + num_attempts + " attempts!");
+    next_puzzle();
+  } else {
+    alert("incorrect. check if you entered the exact title of the movie, or try a different movie. you can also get a hint");
+  }
+};
 
+const next_puzzle = () => {
+  //make this function
+};
 
 export default App

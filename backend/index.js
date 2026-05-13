@@ -20,8 +20,9 @@ const ai = new GoogleGenAI({
 
 var guess =''
 var puzzle_json = {}
+var result = false
 
-async function main() {
+async function send_puzzle() {
   await generate_puzzle();
   app.get("/api/puzzle", (req, res) => {
     res.json(puzzle_json);
@@ -30,7 +31,7 @@ async function main() {
 
 }
 
-main();
+send_puzzle();
 
 app.listen(port, () => {
   console.log(`backend is listening on port ${port}`)
@@ -39,10 +40,13 @@ app.listen(port, () => {
 app.post("/api/guess", (req, res) => {
     console.log(req.body.guess);
     guess = req.body.guess;
+    check_guess();
     res.json({
-        success: true
+        success: true,
+        result: result
     });
 });
+
 
 
 
@@ -70,4 +74,14 @@ async function generate_puzzle() {
     console.log(puzzle_json);
     
 
+}
+
+function check_guess() {
+  if (guess.toLowerCase() === puzzle_json.answer.toLowerCase()) {
+    result = true
+  } else {
+    result = false
+  }
+
+  
 }
