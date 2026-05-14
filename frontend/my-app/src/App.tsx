@@ -109,21 +109,26 @@ function App() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                guess: guess
+                guess: guess,
+                num_attempts: num_attempts,
+                num_hints: num_hints,
+                difficulty: difficulty
                 
             })
         });
 
         const data = await res.json();
         result = data.result;
+        score = data.score;
         console.log(data);
         handle_result()
     };
 
     const handle_result = () => {
       if (result) {
-        score = 20 - num_attempts - num_hints*2  + (difficulty === "medium" ? 5 : difficulty === "hard" ? 10 : 0);
-        alert("you guessed it right and got " + score + " points!");
+
+        
+        alert("you guessed it right and got " + score + " points. select difficulty and click next puzzle to play again");
                
         
       } else {

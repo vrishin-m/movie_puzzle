@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 
 export function Auth({ onLogin }: { onLogin: (token: string) => void }) {
   const [email, setEmail] = useState('');
@@ -22,7 +23,7 @@ export function Auth({ onLogin }: { onLogin: (token: string) => void }) {
       alert(data.error || "Authentication failed");
     }
   };
-
+  Leaderboard() 
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
       <h2>{isSignUp ? 'Create Account' : 'Login'}</h2>
@@ -35,5 +36,70 @@ export function Auth({ onLogin }: { onLogin: (token: string) => void }) {
         {isSignUp ? 'Already have an account? Login' : 'Need an account? Sign Up'}
       </button>
     </div>
+    
+  );
+  
+}
+
+
+const Leaderboard = () => {
+
+  interface Puzzle {
+    id: string;
+    username: string;
+    total_score: number;
+  }
+
+
+  const [users, setUsers] = useState<Puzzle[]>([]); 
+
+  users.map(u => console.log(u.id));
+
+  const [loading, setLoading] = useState(true);
+  
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      
+        const response = await fetch('http://localhost:3000/api/leaderboard');
+        const data = await response.json();
+        setUsers(data); 
+      } 
+
+    fetchUsers();
+  }, []); 
+
+  if (loading) return <div>Loading leaderboard..</div>;
+
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2>Leaderboard</h2>
+      {users.length === 0 ? (
+        <p>No users found.</p>
+      ) : (
+        <table  cellPadding="10" style={{ width: '100%', textAlign: 'left' }}>
+          <thead>
+            <tr>
+
+              <th>Name</th>
+              <th>Total Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td>{user.username}</td>
+                <td>{user.total_score}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }
+ 
+                    
+
+
