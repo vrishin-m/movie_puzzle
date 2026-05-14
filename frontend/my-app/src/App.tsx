@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import { Auth } from '../auth.tsx';
 
 var num_attempts =0
 var guess =""
@@ -7,6 +8,28 @@ var result = false
 var num_hints=0;
 
 function App() {
+
+  //login stuff
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const handleLogin = (newToken: string) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
+
+
+
+
+
+
+
+
+
+
     var [question, setQuestion] = useState<string | null>(null);
     var [unlockedHints, setUnlockedHints] = useState<string[]>([]);
     var [hints, setHints] = useState<string[]>([]);
@@ -105,12 +128,18 @@ function App() {
       }
     };
 
+    if (!token) {
+    return <Auth onLogin={handleLogin} />;
+  }
+  else {
+
 
   return (
     <>
     <div className="titlebar">
       <h1>Movie Puzzle Game</h1>
       <br />
+       <button onClick={handleLogout} style={{ float: 'right' }}>Logout</button>
       <h2> Made by Gandalf</h2>
       
     </div>
@@ -131,7 +160,7 @@ function App() {
 
     </div>
 
-
+      
 
     <div className="game_ui">
       
@@ -140,7 +169,7 @@ function App() {
       <h3> {num_hints>=1?unlockedHints[0]:<br/>}</h3>
       <h3> {num_hints>=2?unlockedHints[1]:<br/>}</h3>
       <h3> {num_hints>=3?unlockedHints[2]:<br/>}</h3>
-      <br /><br /> <br />
+      <br /><br />
       
       <div className="submit">
         <textarea 
@@ -169,7 +198,7 @@ function App() {
     </>
   )
 }
-
+}
 
 
 

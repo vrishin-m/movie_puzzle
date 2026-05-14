@@ -2,6 +2,7 @@ const port = 3000
 const express = require("express");
 const cors = require("cors");
 const app = express()
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ override: true });
 
 app.use(cors({
@@ -10,6 +11,71 @@ app.use(cors({
 app.use(express.json());
 
 const { GoogleGenAI } = require("@google/genai");
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+
+app.post("/auth/signup", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error("Supabase Error:", error.message);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log("Success! User created.");
+    return res.status(201).json({ 
+      message: "User created", 
+      token: data.session?.access_token,
+      user: data.user 
+    });
+
+  } catch (err) {
+    console.error("Unexpected Error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
+app.post("/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return res.status(400).json(error);
+  res.json({ token: data.session.access_token });
+});
+
+
+
+
+
+const authenticateUser = async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1]; 
+
+  if (!token) {
+    return res.status(401).json({ error: "No token provided. Please log in." });
+  }
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return res.status(401).json({ error: "Invalid or expired session." });
+  }
+
+  req.user = user;
+  next(); 
+};
+
+
+
+
+
+
 
 
 
@@ -58,10 +124,6 @@ app.post("/api/next", (req, res) => {
 
 
 
-
-
-
-
 async function generate_puzzle(difficulty) {
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
@@ -69,17 +131,14 @@ async function generate_puzzle(difficulty) {
   });
 
   
-
-  
     const parsedResponse = JSON.parse(response.text);
     puzzle_json = {
       puzzle: parsedResponse[0],
       answer: parsedResponse[1],
       hints: parsedResponse[2],
-      difficulty: parsedResponse[3]};
+      difficulty: difficulty};
     
-    console.log(puzzle_json);
-    
+    console.log(puzzle_json); 
 
 }
 
@@ -89,6 +148,4 @@ function check_guess() {
   } else {
     result = false
   }
-
-  
 }
