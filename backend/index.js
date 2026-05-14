@@ -33,7 +33,7 @@ app.post("/auth/signup", async (req, res) => {
       .insert([
         { 
           id: user_id,
-          username: "potato",
+          username: email.split('@')[0],
           total_score:0
         }
       ])
@@ -229,7 +229,9 @@ async function check_guess() {
 app.get("/api/leaderboard", async (req, res) => {
   const { data, error } = await supabase
     .from('users')
-    .select('*'); 
+    .select('*')
+    .order('total_score', { ascending: false })
+    .limit(10);
 
   if (error) {
     return res.status(400).json({ error: error.message });
