@@ -3,6 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const app = express()
 const { createClient } = require('@supabase/supabase-js');
+var user_id =''
+var puzzle_id = ''
+var score =0
 require('dotenv').config({ override: true });
 
 app.use(cors({
@@ -22,6 +25,20 @@ app.post("/auth/signup", async (req, res) => {
       email,
       password,
     });
+    console.log(data);
+    user_id = data.user.id;
+
+    const { data: data2, error: error2 } = await supabase
+      .from('users')
+      .insert([
+        { 
+          id: user_id,
+          username: "potato",
+          total_score:0
+        }
+      ])
+      .select();
+      console.log(data2);
 
     if (error) {
       console.error("Supabase Error:", error.message);
@@ -39,6 +56,11 @@ app.post("/auth/signup", async (req, res) => {
     console.error("Unexpected Error:", err);
     return res.status(500).json({ error: "Server error" });
   }
+
+
+      
+  
+  
 });
 
 
@@ -46,8 +68,10 @@ app.post("/auth/signup", async (req, res) => {
 app.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  user_id = data.user[0].id;
   if (error) return res.status(400).json(error);
   res.json({ token: data.session.access_token });
+  
 });
 
 
@@ -68,13 +92,10 @@ const authenticateUser = async (req, res, next) => {
   }
 
   req.user = user;
+
+  console.log("Authenticated user:", user_id);
   next(); 
 };
-
-
-
-
-
 
 
 
@@ -106,10 +127,16 @@ app.listen(port, () => {
 app.post("/api/guess", (req, res) => {
     console.log(req.body.guess);
     guess = req.body.guess;
+    attempts = req.body.num_attempts;
+    num_hints = req.body.num_hints;
+    difficulty = req.body.difficulty;
+    score = 20 - attempts - num_hints*2  + (difficulty == "medium" ? 5 : difficulty == "hard" ? 10 : 0);
     check_guess();
+    
     res.json({
         success: true,
-        result: result
+        result: result,
+        score: score
     });
 });
 
@@ -137,15 +164,76 @@ async function generate_puzzle(difficulty) {
       answer: parsedResponse[1],
       hints: parsedResponse[2],
       difficulty: difficulty};
+      const { data, error } = await supabase
+      .from('puzzles')
+      .insert([
+        { 
+          question: puzzle_json.puzzle,
+          answer: puzzle_json.answer,
+          hint1: puzzle_json.hints[0],
+          hint2: puzzle_json.hints[1],
+          hint3: puzzle_json.hints[2],
+          difficulty: puzzle_json.difficulty
+        }
+      ])
     
-    console.log(puzzle_json); 
+      .select()
+      
+      console.log(data);
+      
+        
+      puzzle_id = data[0].id;
+      console.log(puzzle_id);
+
 
 }
 
-function check_guess() {
+async function check_guess() {
   if (guess.toLowerCase() === puzzle_json.answer.toLowerCase()) {
-    result = true
+    result = true;
+    console.log(user_id, puzzle_id, score);
+    const { data, error } = await supabase
+    .from('solves')
+    
+    .insert([
+      { 
+        user: user_id, 
+        puzzle: puzzle_id, 
+        score: Number(score)
+      }
+    ]);
+
+
+      const { data: data2, error: error2 } = await supabase
+      .from('users')
+      .select('total_score')
+      .eq('id', user_id)
+      .single();
+      const total_score = data2.total_score;
+      const { data: data3, error: error3 } = await supabase
+      .from('users')
+      .update(
+        { 
+          total_score: total_score+ score
+        }
+      )
+      .eq ('id', user_id)
+      .select();
+      console.log(data2);
+
   } else {
     result = false
   }
 }
+
+app.get("/api/leaderboard", async (req, res) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*'); 
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  res.json(data); 
+});
