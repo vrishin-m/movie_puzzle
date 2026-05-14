@@ -1,7 +1,10 @@
+const { createClient } = require('@supabase/supabase-js');
+
 const port = 3000
 const express = require("express");
 const cors = require("cors");
 const app = express()
+
 require('dotenv').config({ override: true });
 
 app.use(cors({
@@ -9,86 +12,83 @@ app.use(cors({
 }));
 app.use(express.json());
 
-const { GoogleGenAI } = require("@google/genai");
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
+app.post('/auth/signup', async (req, res) => {
+  const { email, password } = req.body;
 
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json({ message: 'User created successfully', data });
+});
+
+app.post('/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) return res.status(401).json({ error: error.message });
+  res.json({ 
+    message: 'Login successful', 
+    token: data.session.access_token 
+  });
 });
 
 
-var guess =''
-var puzzle_json = {}
-var result = false
+const requireAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-async function send_puzzle(difficulty) {
-  await generate_puzzle(difficulty);
-  app.get("/api/puzzle", (req, res) => {
-    res.json(puzzle_json);
-  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid authorization header' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  req.user = user;
+  next();
+};
+
+
+app.post('/posts', requireAuth, async (req, res) => {
+  const { title, content } = req.body;
+  const userId = req.user.id; 
+
+  const { data, error } = await supabase
+    .from('posts')
+    .insert([{ title, content, user_id: userId }])
+    .select();
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json({ message: 'Post created', post: data });
 });
 
-}
+
+app.get('/posts', async (req, res) => {
+  const { data, error } = await supabase
+    .from('posts')
+   
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ posts: data });
+});
+
+
+
+
 
 send_puzzle("easy");
 
-app.listen(port, () => {
-  console.log(`backend is listening on port ${port}`)
-})
-
-app.post("/api/guess", (req, res) => {
-    console.log(req.body.guess);
-    guess = req.body.guess;
-    check_guess();
-    res.json({
-        success: true,
-        result: result
-    });
-});
-
-
-app.post("/api/next", (req, res) => {
-    if (req.body.next === "true") {
-      console.log("SANJAAAAAAAY")
-        send_puzzle(req.body.difficulty);
-    }
-    res.json({ success: true });
-  });
-
-
-
-
-
-
-
-async function generate_puzzle(difficulty) {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: `generate a ${difficulty} level puzzle that describes a famous movie in a ridiculous way. make the description as unidentifiable as possible, and keep it short. do not give any obvious indicators of the movie. also give the answer and 3 hints. keep the hints in small sentences. the second hint should be a bit more revealing than the first. example puzzle: A billionaire beats up the mentally ill while wearing a rubber suit → The Dark Knight. i need your response to contain a list where first element is the puzzle, second element is the answer, third element is a list of hints. do not include anything else in your response, only the list.`
-  });
-
-  
-
-  
-    const parsedResponse = JSON.parse(response.text);
-    puzzle_json = {
-      puzzle: parsedResponse[0],
-      answer: parsedResponse[1],
-      hints: parsedResponse[2],
-      difficulty: parsedResponse[3]};
-    
-    console.log(puzzle_json);
-    
-
-}
-
-function check_guess() {
-  if (guess.toLowerCase() === puzzle_json.answer.toLowerCase()) {
-    result = true
-  } else {
-    result = false
-  }
-
-  
-}
