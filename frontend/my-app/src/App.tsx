@@ -6,6 +6,7 @@ var num_attempts =0
 var guess =""
 var result = false
 var num_hints=0;
+var score =0
 
 function App() {
 
@@ -121,7 +122,9 @@ function App() {
 
     const handle_result = () => {
       if (result) {
-        alert("you won in " + num_attempts + " attempts!");
+        score = 20 - num_attempts - num_hints*2  + (difficulty === "medium" ? 5 : difficulty === "hard" ? 10 : 0);
+        alert("you guessed it right and got " + score + " points!");
+               
         
       } else {
         alert("incorrect. check if you entered the exact title of the movie, or try a different movie. you can also get a hint");
@@ -139,7 +142,7 @@ function App() {
     <div className="titlebar">
       <h1>Movie Puzzle Game</h1>
       <br />
-       <button onClick={handleLogout} style={{ float: 'right' }}>Logout</button>
+       <button onClick={handleLogout} style={{ float: 'right' }}>Logout</button>  
       <h2> Made by Gandalf</h2>
       
     </div>
